@@ -1,0 +1,82 @@
+{% set all_domain=["alert","automation","binary_sensor","calendar","camera","climate","customizer","device_tracker","group","input_boolean","input_number","input_select","input_text","light","media_player","persistent_notification","remote","scene","script","sensor","sun","switch","timer","variable","zone"] %}
+{% set domains=["alert","automation","binary_sensor","calendar","camera","climate","device_tracker","group","input_boolean","input_number","input_select","input_text","light","media_player","remote","scene","script","sensor","sun","switch","timer","variable","zone"] %}
+
+{% macro capitalize(label) -%}
+{{- (label~ '"'~value).replace('"','').replace('Tv','TV').replace('tv','TV').replace('Hdmi','HDMI').replace('Itunes','iTunes').replace('Iphone','iPhone').replace('Tts','TTS').replace('Ups','UPS').replace("Ipad","iPad").replace('Fedex','FedEx').replace('nanoleaf','Nanoleaf').replace('google','Google').replace('Url','URL').replace('Eight ','').replace('itunes','iTunes') -}}
+{% endmacro %}
+
+{% set all=['group', 'assumed_state', 'initial_state', 'icon', 'homebridge_hidden', 'emulated_hue_hidden', 'alexa_hidden', 'unit_of_measurement', 'device_class', 'hidden' ] %}
+{% set default=['', 'False', '', '', 'True', 'True', '', '', 'False'] %}
+{% set alexa=['alexa_name', 'alexa_description', 'alexa_display_categories' ] %}
+
+{% for domain in domains %}
+#####  {{ domain }}  #####
+{{ '\n' }}
+{%- for state in states[domain] -%}
+{% set alexa_type="" %}
+  {%- if state.domain=="automation" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["initial_state",True], ["hidden",False] ] -%}
+  {%- elif state.domain=="switch" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["initial_state",""], ["assumed_state", ""], ["hidden",False] ] -%}{% set alexa_type="SWITCH" %}
+  {%- elif state.domain=="binary_sensor" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["device_class",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="sensor" %}{%- set constants=[["icon", ""], ["unit_of_measure",""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["hidden",False] ] -%}
+  {%- elif state.domain=="input_number" -%}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="input_select" -%}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="group" -%}{%- set constants=[["icon", ""], ["group",""], ["control", "hidden"] ] -%}
+  {%- elif state.domain=="media_player" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {%- elif state.domain=="input_boolean" -%}{%- set constants=[["icon", ""], ["initial",""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {%- elif state.domain=="scene" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {%- elif state.domain=="script" -%}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {%- elif state.domain=="light" %}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="climate" %}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="zone" %}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="variable" %}{%- set constants=[["icon", ""], ["group",""] ] -%}
+  {%- elif state.domain=="device_tracker" %}{%- set constants=[["icon", ""], ["group",""], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {%- elif state.domain=="calendar" or state.domain=="camera" or state.domain=="variable" -%}{%- set constants=[["icon", ""], ["group",""], ["hidden",False] ] -%}
+  {%- elif state.domain=="input_boolean" -%}{%- set constants=[["icon", ""], ["group",""], ["initial", "off"], ["emulated_hue_hidden",True], ["homebridge_hidden",True], ["alexa_hidden", True], ["hidden",False] ] -%}{% set alexa_type="TV" %}
+  {% endif -%}
+  {{ state.entity_id }}:
+  {%- if '"' in state.attributes.friendly_name -%}
+    {% set friendly=state.attributes.friendly_name~" #set in customize.yaml" %}
+  {% elif state.attributes.friendly_name=='' -%}
+    {% set friendly= state.entity_id.split('.')[1] | replace('"','') | replace("_"," ") | title %}
+  {% elif state.attributes.friendly_name -%}
+    {% set friendly= state.attributes.friendly_name | replace('"','') | replace("_"," ") | title %}
+  {% else -%}
+    {% set friendly= state.entity_id.split('.')[1] | replace('"','') | replace("_"," ") | title %}
+  {%- endif -%}
+  friendly_name: "{{ capitalize(capitalize(friendly[0]~friendly[1:]) ) }}"
+  {%- for attrib in constants %}
+    {%- set label=attrib[0] -%}{%- set default=attrib[1] -%}
+    {%- if label=="group" and state.attributes["group"] is defined %}
+  group:
+      {%- for groups in state.attributes["group"] %}
+    {{groups}}:
+       friendly_name: "{{ capitalize(state.attributes["group"][groups]["friendly_name"]) }}"
+      {%- endfor %}
+    {%- elif state.attributes[label] is defined %}
+  {{ label }}: {{ state.attributes[label] }}
+      {%- if label=="homebridge_hidden" %}
+        {%- if state.attributes["homebridge_hidden"]==False %}
+  homebridge_name: "{% if state.attributes['homebridge_name'] is defined %}{{ state.attributes['homebridge_name'] }}{% else %}{{ capitalize(capitalize(friendly[0]~friendly[1:]) ) }}{% endif -%}"
+  homebridge_serial: {% if state.attributes['homebridge_serial']  is defined %}{{ state.attributes['homebridge_serial'] }}{% else %}{{ state.entity_id.split('.')[1] }}{% endif %}
+  homebridge_model: "{% if state.attributes['homebridge_model']  is defined %}{% if state.attributes['homebridge_model']=="MODEL BLANK" %}{{ capitalize(state.object_id.replace('_',' ') | title ) }}{%else %}{{ state.attributes['homebridge_model'] }}{%endif %}{% else %}{{ capitalize(state.object_id.replace('_',' ') | title ) }}{% endif %}"
+  homebridge_mfg: "{% if state.attributes['homebridge_mfg']  is defined %}{{ capitalize(state.domain.replace('_',' ') ).replace('"','') | title }}{% else %}{{ capitalize(state.domain.replace('_',' ')) | title }}{% endif %}"
+        {%- endif %}
+      {%- elif label=="emulated_hue_hidden" %}
+        {%- if state.attributes["emulated_hue_hidden"]==False %}
+  emulated_hue_name: "{% if state.attributes['emulated_hue_name']  is defined %}{{ state.attributes['emulated_hue_name'] }}{% else %}{{ capitalize(capitalize(friendly[0]~friendly[1:]) ) }}{% endif -%}"
+        {%- endif %}
+      {%- elif label=="alexa_hidden" %}
+        {%- if state.attributes["alexa_hidden"]==False %}
+  alexa_name: "{% if state.attributes["alexa_name"] is defined %}{{ state.attributes["alexa_name"] }}{% else %}{{ state.name | title }}{% endif %}"
+  alexa_description: "The {{ state.domain.replace('_',' ') | lower }} for {{ capitalize(state.object_id.replace('_',' ') | lower ).replace('"','')  }}"
+  alexa_display_categories: {% if state.attributes["alexa_display_categories"]  is defined %}{{ state.attributes["alexa_display_categories"] }}{% else %}{% if alexa_type is defined %}{{ alexa_type }}{% else %}OTHER{% endif %}{% endif %}
+        {%- endif %}
+      {%- endif -%}
+    {%- elif default != "" %}
+  {{ label }}: {{ default }}
+    {%- endif -%}
+  {% endfor %}
+
+{% endfor -%}
+
+{% endfor %}
