@@ -3,6 +3,10 @@
 {%- set ignored_domains=[] -%}
 {%- set visible_domains=[] -%}
 
+{%- set CORRECT_NAME_CHANGES_USING_capitalize=True -%}
+{%- macro capitalize(label) -%}{%- set output_input=(label | title) -%}{%- set output_value=output_input.replace('Tv','TV').replace('Hdmi','HDMI').replace('Itunes','iTunes').replace('Iphone','iPhone').replace('Ipad','iPad').replace('Tts','TTS').replace('Ups','UPS').replace('Fedex','FedEx').replace('Url','URL').replace('Ifttt','IFTTT') -%}{{ output_value }}{%- endmacro -%}
+
+{%- set VALUES_FOR_EACH_DOMAIN_TO_BE_ADDED_TO_CUSTOMIZE=True -%}
 {%- set automation_constants=[["group",""],["icon",""],["initial_state","on"],["hide_entity",False],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set sensor_constants=[["group",""],["icon",""],["entity_picture",""],["unit_of_measurement",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set binary_sensor_constants=[["group",""],["entity_picture",""],["delay_on",""],["delay_off",""],["device_class",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
@@ -10,18 +14,19 @@
 {%- set group_constants=[["icon",""],["view",""],["control","hidden"],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set script_constants=[["group",""],["icon",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set input_boolean_constants=[["group",""],["icon",""],["initial","off"],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
+
 {%- set DO_NOT_MAKE_CHANGES_BELOW_THIS_POINT=True -%}
 
 {%- set domains=["apple_tv","automation","binary_sensor","calendar","climate","device_tracker","group","input_boolean","input_datetime","input_number","input_select","light","media_player","remote","scene","script","sensor","shell_command","switch","timer","tts"] -%}
 {{- '#'.ljust(45,'#') }}
 {{ '#'.ljust(5,' ')~"Domains: "~domains | replace("'","") | replace("[","") | replace("]","") }}
-{%- if visible_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Visible Domains: "~visible_domains | replace("'","") | replace("[","") | replace("]","") }}{% endif %}
+#
+{% if visible_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Visible Domains: "~visible_domains | replace("'","") | replace("[","") | replace("]","") }}{% endif %}
 {{ '#'.ljust(5,' ')~"Ignore Domains: "~ignored_domains | replace("'","") | replace("[","") | replace("]","") }}
-{% if show_only_emulated_hue==False and show_only_homebridge==False %}{{ '#'.ljust(5,' ')~"Show All Entities: True"}}{% else %}{{ '#'.ljust(5,' ')~"Show All Entities: False"}}{%- endif %}
+{% if show_only_emulated_hue==False and show_only_homebridge==False and visible_domains | length == 0 %}{{ '#'.ljust(5,' ')~"Show All Entities: True"}}{% else %}{{ '#'.ljust(5,' ')~"Show All Entities: False"}}{%- endif %}
 {{ '#'.ljust(5,' ')~"Show Only HomeBridge Hidden: "~show_only_homebridge }}
 {{ '#'.ljust(5,' ')~"Show Only Emulated Hue: "~show_only_emulated_hue }}
 {{ '#'.ljust(45,'#') }}
-{%- macro capitalize(label) -%}{%- set out1=(label | title).replace("eight ",'').replace("eattherich","Kelcie iPhone").replace("dark sky ", "") -%}{%- set output_value=out1.replace('Tv','TV').replace('Hdmi','HDMI').replace('Itunes','iTunes').replace('Iphone','iPhone').replace('Ipad','iPad').replace('Tts','TTS').replace('Ups','UPS').replace('Fedex','FedEx').replace('Url','URL').replace('Ifttt','IFTTT') -%}{{ output_value }}{%- endmacro -%}
 
 
 {% for domain in domains -%}
@@ -79,11 +84,11 @@
   homebridge_model: "{% if state.attributes['homebridge_model'] %}{{ state.attributes['homebridge_model'] }}{% else %}{{ capitalize(state.domain.replace('_',' ') | title ) }}{% endif %}"
   homebridge_mfg: "{% if state.attributes['homebridge_mfg'] %}{{state.attributes['homebridge_mfg']}}{% else %}Home Assistant{% endif %}"
   {%- if domain=="media_player" %}homebridge_media_player_switch: {% if state.attributes['homebridge_media_player_switch'] %}{{state.attributes['homebridge_media_player_switch']}}{% else %}on_off{% endif %}{% endif %}
-        {%- endif -%}
+        {%- endif %}
       {%- elif label=="emulated_hue_hidden" %}
         {%- if state.attributes["emulated_hue_hidden"]==False %}
   emulated_hue_name: "{% if state.attributes['emulated_hue_name'] %}{{ state.attributes['emulated_hue_name'] }}{% else %}{{ capitalize(capitalize(friendly[0]~friendly[1:]) ) }}{% endif -%}"
-        {%- endif -%}
+        {%- endif %}
       {%- endif -%}
     {%- elif default != "" %}
   {{ label }}: {{ default }}
