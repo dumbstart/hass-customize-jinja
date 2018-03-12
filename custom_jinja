@@ -1,12 +1,55 @@
+{%- set show_tips=False %}
 {%- set show_only_emulated_hue=False -%}
 {%- set show_only_homebridge=False -%}
 {%- set ignored_domains=[] -%}
 {%- set visible_domains=[] -%}
 
-{%- set CORRECT_NAME_CHANGES_USING_capitalize=True -%}
-{%- macro capitalize(label) -%}{%- set output_input=(label | title) -%}{%- set output_value=output_input.replace('Tv','TV').replace('Hdmi','HDMI').replace('Itunes','iTunes').replace('Iphone','iPhone').replace('Ipad','iPad').replace('Tts','TTS').replace('Ups','UPS').replace('Fedex','FedEx').replace('Url','URL').replace('Ifttt','IFTTT') -%}{{ output_value }}{%- endmacro -%}
+{{ '#'.ljust(45,'#') }}
+{{ '#'.ljust(5,' ') }}Change show_tips to True to learn more
+{{ '#'.ljust(45,'#') }}
+
+{% set CORRECT_NAME_CHANGES_USING_CAPITALIZE_MACRO=True -%}
+{%- if show_tips==True %}
+{{ '#'.ljust(45,'#') }}
+{{ '#'.ljust(5,' ') }}The capitalize macro will adjust words in friendly names to ensure they are capitalized correctly, i.e. Iphone becomes iPhone, Url becomes URL.
+{{ '#'.ljust(5,' ') }}You can add your own by editing the capitalize list below. By adding .replace('michael','Michael') you can ensure any friendly names use the
+{{ '#'.ljust(5,' ') }}correct capitalization of the name Michael.
+{{ '#'.ljust(45,'#') }}
+
+{% endif -%}
+
+{%- macro capitalize(label) -%}{%- set output_input=(label | title) -%}
+{%- set output_value=output_input
+  .replace('Tv','TV')
+  .replace('Hdmi','HDMI')
+  .replace('Itunes','iTunes')
+  .replace('Iphone','iPhone')
+  .replace('Ipad','iPad')
+  .replace('Tts','TTS')
+  .replace('Ups','UPS')
+  .replace('Fedex','FedEx')
+  .replace('Url','URL')
+  .replace('Ifttt','IFTTT') -%}
+{{ output_value }}
+{%- endmacro -%}
 
 {%- set VALUES_FOR_EACH_DOMAIN_TO_BE_ADDED_TO_CUSTOMIZE=True -%}
+
+{%- if show_tips==True %}
+{{ '#'.ljust(45,'#') }}
+{{ '#'.ljust(5,' ') }}Create default values for domains by creating a nested list of attributes and default values.
+{{ '#'.ljust(5,' ') }}Begin by creating a list for the domain, i.e. domain_constants=[]
+{{ '#'.ljust(5,' ') }}Add in lists of attributes and default values, i.e. ["icon",""] or ["icon","mdi:ceiling-light"]
+{{ '#'.ljust(5,' ') }}This will assist in creating a customized.yaml that is tailored to your install
+{{ '#\n'~'#'.ljust(5,' ') }}For example:
+{{ '#'.ljust(7,' ') }}script_constants=[["group",""],["icon",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]]
+{{ '#\n'~'#'.ljust(5,' ') }}This creates default values for scripts. The first list sets all scripts that do not have a set group will not be automatically added to a group. The same goes for icon, theme(custom-ui addon), template(custom-ui addon), and hidden.
+{{ '#'.ljust(5,' ') }}It does automatically set emulated_hidden to True as well as homebridge_hidden to True.
+{{ '#'.ljust(5,' ') }}You could assign a different icon to all scripts that do not have an assigned icon by changing ["icon":""] to ["icon":"mdi:playlist-play"]
+{{ '#'.ljust(45,'#') }}
+
+{% endif -%}
+
 {%- set automation_constants=[["group",""],["icon",""],["initial_state","on"],["hide_entity",False],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set sensor_constants=[["group",""],["icon",""],["entity_picture",""],["unit_of_measurement",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
 {%- set binary_sensor_constants=[["group",""],["entity_picture",""],["delay_on",""],["delay_off",""],["device_class",""],["theme",""],["templates",""],["emulated_hue_hidden",True],["homebridge_hidden",True],["hidden",""]] -%}
@@ -19,11 +62,11 @@
 
 {%- set domains=["apple_tv","automation","binary_sensor","calendar","climate","device_tracker","group","input_boolean","input_datetime","input_number","input_select","light","media_player","remote","scene","script","sensor","shell_command","switch","timer","tts"] -%}
 {{- '#'.ljust(45,'#') }}
-{{ '#'.ljust(5,' ')~"Domains: "~domains | replace("'","") | replace("[","") | replace("]","") }}
+{{ '#'.ljust(5,' ')~"Domains: "~domains | replace("'","") | replace("[","\n#      - ") | replace("]","") | replace(", ","\n#      - ") }}
 #
-{% if visible_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Visible Domains: "~visible_domains | replace("'","") | replace("[","") | replace("]","") }}{% endif %}
-{{ '#'.ljust(5,' ')~"Ignore Domains: "~ignored_domains | replace("'","") | replace("[","") | replace("]","") }}
-{% if show_only_emulated_hue==False and show_only_homebridge==False and visible_domains | length == 0 %}{{ '#'.ljust(5,' ')~"Show All Entities: True"}}{% else %}{{ '#'.ljust(5,' ')~"Show All Entities: False"}}{%- endif %}
+{%- if visible_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Visible Domains: "~visible_domains | replace("'","") | replace("[","") | replace("]","") }}{% endif %}
+{%- if ignored_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Ignored Domains: "~ignored_domains | replace("'","") | replace("[","") | replace("]","") }}{% endif %}
+{% if show_only_emulated_hue==False or show_only_homebridge==False or ignored_domains | length > 0 or visible_domains | length > 0 %}{{ '#'.ljust(5,' ')~"Show All Entities: True"}}{% else %}{{ '#'.ljust(5,' ')~"Show All Entities: False"}}{%- endif %}
 {{ '#'.ljust(5,' ')~"Show Only HomeBridge Hidden: "~show_only_homebridge }}
 {{ '#'.ljust(5,' ')~"Show Only Emulated Hue: "~show_only_emulated_hue }}
 {{ '#'.ljust(45,'#') }}
@@ -73,6 +116,10 @@
       {%- if state.attributes["unit_of_measurement"] is defined %}
   unit_of_measurement: "{{ state.attributes['unit_of_measurement'] }}"
       {%- endif -%}
+    {%- elif label=="entity_picture"  %}  
+      {%- if state.attributes["entity_picture"] is defined and "media_player_proxy" not in state.attributes["entity_picture"] %}
+  unit_of_measurement: "{{ state.attributes['entity_picture'] }}"
+      {%- endif -%}
     {%- elif label=="initial_state" and state.domain == "automation"  %}  
   initial_state: "on"
     {%- elif state.attributes[label] is defined %}
@@ -83,7 +130,8 @@
   homebridge_serial: {% if state.attributes['homebridge_serial'] %}{{ state.attributes['homebridge_serial'] }}{% else %}{{ state.entity_id.split('.')[1] }}{% endif %}
   homebridge_model: "{% if state.attributes['homebridge_model'] %}{{ state.attributes['homebridge_model'] }}{% else %}{{ capitalize(state.domain.replace('_',' ') | title ) }}{% endif %}"
   homebridge_mfg: "{% if state.attributes['homebridge_mfg'] %}{{state.attributes['homebridge_mfg']}}{% else %}Home Assistant{% endif %}"
-  {%- if domain=="media_player" %}homebridge_media_player_switch: {% if state.attributes['homebridge_media_player_switch'] %}{{state.attributes['homebridge_media_player_switch']}}{% else %}on_off{% endif %}{% endif %}
+  {%- if domain=="media_player" %}
+  homebridge_media_player_switch: {% if state.attributes['homebridge_media_player_switch'] %}{{state.attributes['homebridge_media_player_switch']}}{% else %}on_off{% endif %}{% endif %}
         {%- endif %}
       {%- elif label=="emulated_hue_hidden" %}
         {%- if state.attributes["emulated_hue_hidden"]==False %}
